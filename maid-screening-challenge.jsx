@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5AoC1Ej47-OPiT9VKX1quK9HJPVxJ2Cm7YOrQLrdqdrAxjm0gNu4Dc5-2xx5FA8gI/exec';
+const API_URL = '/api/submissions';
 
 const MaidScreeningChallenge = () => {
   const [currentSection, setCurrentSection] = useState('welcome');
@@ -19,7 +19,7 @@ const MaidScreeningChallenge = () => {
   const [mathSubmitted, setMathSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef(null);
-  
+
   // Admin states
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
@@ -31,7 +31,7 @@ const MaidScreeningChallenge = () => {
   const fetchSubmissions = async () => {
     setIsLoadingSubmissions(true);
     try {
-      const response = await fetch(GOOGLE_SCRIPT_URL);
+      const response = await fetch(API_URL);
       const data = await response.json();
       const transformed = data.map((row, index) => {
         let traitScores = {};
@@ -39,8 +39,8 @@ const MaidScreeningChallenge = () => {
         try {
           traitScores = typeof row['Trait Scores'] === 'string' ? JSON.parse(row['Trait Scores']) : row['Trait Scores'] || {};
           personalityAnswersData = typeof row['Answers'] === 'string' ? JSON.parse(row['Answers']) : row['Answers'] || {};
-        } catch (e) {}
-        
+        } catch (e) { }
+
         return {
           id: index,
           timestamp: row['Timestamp'] || row.Timestamp,
@@ -224,7 +224,7 @@ const MaidScreeningChallenge = () => {
 
   const traitNames = {
     G: "The Brave Leader",
-    S: "The Strategic Achiever", 
+    S: "The Strategic Achiever",
     R: "The Thoughtful Learner",
     H: "The Loyal Helper"
   };
@@ -250,9 +250,9 @@ const MaidScreeningChallenge = () => {
     Object.values(personalityAnswers).forEach(trait => {
       traits[trait]++;
     });
-    
+
     const maxTrait = Object.keys(traits).reduce((a, b) => traits[a] > traits[b] ? a : b);
-    
+
     setPersonalityResult({
       type: traitNames[maxTrait],
       description: traitDescriptions[maxTrait],
@@ -260,7 +260,7 @@ const MaidScreeningChallenge = () => {
       house: houseNames[maxTrait].name,
       traits: traits
     });
-    
+
     return {
       type: traitNames[maxTrait],
       description: traitDescriptions[maxTrait],
@@ -285,7 +285,7 @@ const MaidScreeningChallenge = () => {
 
   const saveSubmission = async (personality) => {
     setIsSubmitting(true);
-    
+
     const answerDetails = {};
     Object.entries(personalityAnswers).forEach(([qId, trait]) => {
       answerDetails[qId] = {
@@ -309,19 +309,16 @@ const MaidScreeningChallenge = () => {
     };
 
     try {
-      // Use fetch with FormData approach which works better with Google Apps Script
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(submissionData));
-      
-      await fetch(GOOGLE_SCRIPT_URL, {
+      await fetch(API_URL, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submissionData)
       });
     } catch (error) {
       // Even if there's a CORS error, the data might have been saved
       console.log('Submission sent');
     }
-    
+
     setIsSubmitting(false);
   };
 
@@ -348,7 +345,7 @@ const MaidScreeningChallenge = () => {
       s.house,
       s.timestamp ? new Date(s.timestamp).toLocaleString() : ''
     ]);
-    
+
     const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell || ''}"`).join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -511,7 +508,7 @@ const MaidScreeningChallenge = () => {
   if (currentSection === 'admin' && adminLoggedIn && selectedSubmission) {
     const s = selectedSubmission;
     const house = houseNames[s.personalityCode] || houseNames.H;
-    
+
     return (
       <div style={containerStyle}>
         <div style={adminCardStyle}>
@@ -528,11 +525,11 @@ const MaidScreeningChallenge = () => {
           </div>
 
           {/* House Badge */}
-          <div style={{ 
-            background: house.color, 
-            color: 'white', 
-            borderRadius: '16px', 
-            padding: '20px', 
+          <div style={{
+            background: house.color,
+            color: 'white',
+            borderRadius: '16px',
+            padding: '20px',
             marginBottom: '20px',
             textAlign: 'center'
           }}>
@@ -606,9 +603,9 @@ const MaidScreeningChallenge = () => {
                     <div style={{ fontWeight: '600', color: '#333', marginBottom: '8px', fontSize: '14px' }}>
                       Q{index + 1}: {q.question}
                     </div>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: '8px',
                       background: '#f0f7ff',
                       padding: '10px 14px',
@@ -717,9 +714,9 @@ const MaidScreeningChallenge = () => {
                         </span>
                       </td>
                       <td style={tdStyle}>
-                        <span style={{ 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
                           gap: '4px',
                           background: houseNames[s.personalityCode]?.color || '#666',
                           color: 'white',
@@ -777,7 +774,7 @@ const MaidScreeningChallenge = () => {
               for Darius Cheung Household
             </h2>
           </div>
-          
+
           <div style={{ background: '#f8f9ff', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
             <p style={{ margin: '0 0 12px 0', fontWeight: '600', color: '#333' }}>
               This challenge has 3 parts:
@@ -865,7 +862,7 @@ const MaidScreeningChallenge = () => {
             Start Challenge →
           </button>
         </div>
-        
+
         <div style={adminLinkStyle} onClick={() => setCurrentSection('admin')}>
           Admin
         </div>
@@ -881,7 +878,7 @@ const MaidScreeningChallenge = () => {
           <div style={progressStyle}>
             <div style={progressFillStyle(33)} />
           </div>
-          
+
           <h2 style={{ fontSize: '20px', color: '#333', margin: '0 0 8px 0' }}>
             📹 Part 1: Video Introduction
           </h2>
@@ -1118,7 +1115,7 @@ const MaidScreeningChallenge = () => {
             <h3 style={{ fontSize: '16px', color: '#333', margin: '0 0 16px 0' }}>
               Your Results Summary
             </h3>
-            
+
             <div style={{ marginBottom: '12px' }}>
               <span style={{ color: '#888', fontSize: '13px' }}>Contact:</span>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px' }}>{phoneNumber}</p>
@@ -1133,14 +1130,14 @@ const MaidScreeningChallenge = () => {
               <span style={{ color: '#888', fontSize: '13px' }}>Available From:</span>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px' }}>{new Date(startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
-            
+
             <div style={{ marginBottom: '12px' }}>
               <span style={{ color: '#888', fontSize: '13px' }}>Math Score:</span>
               <p style={{ margin: '4px 0 0 0', fontSize: '18px', fontWeight: '600', color: mathScore >= 4 ? '#16a34a' : mathScore >= 3 ? '#ca8a04' : '#dc2626' }}>
                 {mathScore}/5
               </p>
             </div>
-            
+
             <div>
               <span style={{ color: '#888', fontSize: '13px' }}>Work Style:</span>
               <p style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '600', color: '#667eea' }}>
