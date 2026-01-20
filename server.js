@@ -21,6 +21,12 @@ const pool = new Pool({
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.use(express.static(join(__dirname, 'dist')));
 
 // API Routes

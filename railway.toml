@@ -3,3 +3,5 @@ builder = "NIXPACKS"
 
 [deploy]
 startCommand = "node init-db.js && node server.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
